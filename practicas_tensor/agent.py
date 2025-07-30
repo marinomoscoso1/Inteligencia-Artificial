@@ -1,0 +1,39 @@
+from tensor import Enviroment,Agent
+import sys,time,os
+
+environ=Enviroment(sys.argv[1])
+agent=Agent(environ.get_state().shape)
+
+for episode in range(1000):
+    state=environ.reset()
+    state=environ.get_state()
+
+    done=False
+    rewards=0
+
+    for step in range(500):
+
+        action=agent.get_action(state)
+
+        reward,next_state,done=environ.step(action)
+
+        if episode %50==0:
+            environ.render()
+            time.sleep(0.6)
+            os.system("clear")
+
+        next_state=environ.get_state()
+
+        agent.remember(state,action,reward,next_state,done)
+        agent.replay()
+
+        state=next_state
+        rewards+=reward
+
+        if done:
+            break
+
+    if agent.epsilon > agent.epsilon_min:
+        agent.epsilon*= agent.epsilon_decay
+
+    print("Episodio:", episode, "| Recompensa total:", rewards, "| Epsilon:", agent.epsilon)

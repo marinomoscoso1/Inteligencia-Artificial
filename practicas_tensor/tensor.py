@@ -1,10 +1,11 @@
 import tensorflow as tf
 import numpy as np
 import copy
-import sys
-from tensorflows.structure_creator import create_structure
+import random
+from collections import deque
+from structure_creator import create_structure
 
-class Envirement:
+class Enviroment:
     def __init__(self,file):
         self.file=file
 
@@ -79,15 +80,75 @@ class Envirement:
 
         return encoding_structure
 
-    def render(self,structure):
+    def render(self):
         for i in self.structure:
             print(i)
 
 class Agent:
 
-    def __init__(self):
+    def __init__(self,input):
+
+        self.input=input
+
         self.model=tf.keras.Sequential()
-        self.model.add(tf.keras.layers.Conv2D)
+        self.model.add(tf.keras.layers.Conv2D(32,(3,3),input_shape=self.input,activation="relu"))
+        self.model.add(tf.keras.layers.Flatten())
+        self.model.add(tf.keras.layers.Dense(128,activation="relu"))
+        self.model.add(tf.keras.layers.Dense(4,activation="linear"))
+
+        self.gamma=0.99
+        self.epsilon=1.0
+        self.epsilon_min=0.1
+        self.epsilon_decay=0.99
+        self.learning_rate=0.005
+        self.batch_size=64
+        self.memory=deque(maxlen=4000)
+
+        self.model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate),
+            loss="mean_squared_error"
+        )
+    
+    def get_action(self,state):
+
+        random_number=tf.random.uniform(shape=[],dtype=tf.float32)
+
+        if random_number < self.epsilon:
+            return tf.random.uniform(dtype=tf.int32,minval=0,maxval=4,shape=[])
+        else:
+            state=np.expand_dims(state,axis=0)
+            prediction=self.model.predict(state)
+            return np.argmax(prediction[0])
+        
+    def remember(self,state,action,reward,next_state,done):
+        self.memory.append((state,action,reward,next_state,done))
+
+    def replay(self):
+
+        if len(self.memory)<self.batch_size:
+            return
+
+        random_batch=random.sample(self.memory,self.batch_size)
+
+        for experience in random_batch:
+            state,action,reward,next_state,done=experience
+
+            state=np.expand_dims(state,axis=0)
+            next_state=np.expand_dims(next_state,axis=0)
+
+            q_values=self.model.predict(state)
+            q_next=self.model.predict(next_state)
+
+            if done:
+                q_target=reward
+            else:
+                q_target=reward+self.gamma*max(q_next[0])
+
+            q_values[0][action]=q_target
+            self.model.fit(state,q_values,verbose=0)
+
+
+
 
         
 
