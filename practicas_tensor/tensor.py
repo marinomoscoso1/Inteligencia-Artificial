@@ -28,7 +28,7 @@ class Enviroment:
     def step(self,action):
         reward_goal=100
         reward_obsta=-10
-        reward_pass=-1
+        reward_pass=1
         invalid_reward=-8
 
         match action:
@@ -56,8 +56,8 @@ class Enviroment:
             self.structure[new_state[0]][new_state[1]]="A"
             self.structure[self.actual_agent_position[0]][self.actual_agent_position[1]]="."
             self.actual_agent_position=new_state
-            for i in self.structure:
-                print(i)
+            #for i in self.structure:
+            #    print(i)
 
         return reward_pass,self.actual_agent_position,False
     
@@ -115,6 +115,8 @@ class Enviroment:
         plt.axis("off")
         plt.pause(0.2)
         plt.draw()
+
+        plt.savefig("laberinto.png")
 
 class Agent:
 

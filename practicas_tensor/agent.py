@@ -9,23 +9,23 @@ episode_rewards=[]
 
 plt.ion()
 
+done=False
+
 for episode in range(1000):
     state=environ.reset()
     state=environ.get_state()
 
-    done=False
     rewards=0
 
-    for step in range(500):
+    for step in range(80):
 
         action=agent.get_action(state)
 
         reward,next_state,done=environ.step(action)
 
-        if episode %50==0:
-            environ.render()
-            time.sleep(0.3)
-            os.system("clear")
+        environ.render()
+        time.sleep(0.3)
+        os.system("clear")
 
         next_state=environ.get_state()
 
@@ -42,6 +42,9 @@ for episode in range(1000):
     if agent.epsilon > agent.epsilon_min:
         agent.epsilon*= agent.epsilon_decay
 
+    if done:
+        break
+
     print("Episodio:", episode, "| Recompensa total:", rewards, "| Epsilon:", agent.epsilon)
 
 plt.plot(episode_rewards)
@@ -49,4 +52,4 @@ plt.xlabel("Episodio")
 plt.ylabel("Recompensa Total")
 plt.title("Recompensas")
 plt.grid(True)
-plt.show()
+plt.savefig("image.png")
