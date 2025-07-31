@@ -18,15 +18,38 @@ class Enviroment:
 
         self.actual_agent_position=self.agent_position[:]
 
+        self.visited_positions=set()
+
+        self.repetitive_penalty=-5
+        self.goal_reward=100
+        self.best_avg_reward=float("-inf")
+        self.historical_rewards=[]
+
     def reset(self):
         self.structure=copy.deepcopy(self.original_structure)
 
         self.actual_agent_position=self.agent_position[:]
 
+        self.visited_positions=set()
+
         return self.actual_agent_position
+
+    def update_penalty_needed(self,episode,reward):
+        self.historical_rewards.append(reward)
+
+        if episode%50==0 and len(self.historical_rewards)>=50:
+            last_data=self.historical_rewards[-50:]
+            average=sum(last_data)/len(last_data)
+
+            if average>self.best_avg_reward:
+                self.best_avg_reward=average
+            else:
+                if self.repetitive_penalty>-20:
+                    self.repetitive_penalty-=1
+                if self.goal_reward<210:
+                    self.goal_reward+=5
     
     def step(self,action):
-        reward_goal=100
         reward_obsta=-10
         reward_pass=1
         invalid_reward=-8
@@ -43,17 +66,21 @@ class Enviroment:
     
         if new_state[0]<0 or new_state[1]<0 or new_state[0]>=len(self.structure) or new_state[1]>=len(self.structure[0]):
             return invalid_reward,new_state,False
+        
+        if tuple(new_state) in self.visited_positions:
+            return self.repetitive_penalty,new_state,False
     
         cell= self.structure[new_state[0]][new_state[1]]
 
         if cell=="G":
             self.structure[new_state[0]][new_state[1]]="A"
             self.actual_agent_position=new_state
-            return reward_goal,new_state,True
+            return self.goal_reward,new_state,True
         elif cell=="#":
             return reward_obsta,new_state,False
         elif cell==".":
             self.structure[new_state[0]][new_state[1]]="A"
+            self.visited_positions.add(tuple(new_state))
             self.structure[self.actual_agent_position[0]][self.actual_agent_position[1]]="."
             self.actual_agent_position=new_state
             #for i in self.structure:
@@ -130,18 +157,40 @@ class Agent:
         self.model.add(tf.keras.layers.Dense(128,activation="relu"))
         self.model.add(tf.keras.layers.Dense(4,activation="linear"))
 
+        self.best_avg_reward=-float("inf")
+        self.memory_maxlen=5000
+
+        self.historial_rewards=[]
+
         self.gamma=0.99
         self.epsilon=1.0
         self.epsilon_min=0.1
         self.epsilon_decay=0.99
         self.learning_rate=0.005
-        self.batch_size=64
+        self.batch_size=16
         self.memory=deque(maxlen=5000)
 
         self.model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate),
             loss="mean_squared_error"
         )
+
+    def update_memory_needed(self,episode,reward):
+
+        self.historial_rewards.append(reward)
+
+        if episode%50==0 and len(self.historial_rewards)>=50:
+            last_rewards=self.historial_rewards[-50:]
+            average=sum(last_rewards)/len(last_rewards)
+
+            if average>self.best_avg_reward:
+                self.best_avg_reward=average
+            else:
+                if self.memory_maxlen<11000:
+                    self.memory_maxlen+=200
+
+                if self.memory_maxlen> len(self.memory):
+                    self.memory=deque(list(self.memory),maxlen=self.memory_maxlen)
     
     def get_action(self,state):
 

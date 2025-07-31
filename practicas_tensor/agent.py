@@ -9,10 +9,8 @@ episode_rewards=[]
 
 plt.ion()
 
-done=False
-
 for episode in range(1000):
-    state=environ.reset()
+    environ.reset()
     state=environ.get_state()
 
     rewards=0
@@ -30,7 +28,14 @@ for episode in range(1000):
         next_state=environ.get_state()
 
         agent.remember(state,action,reward,next_state,done)
-        agent.replay()
+
+        if episode<50:
+            if step%20==0:
+                agent.replay()
+        else:
+            if step%10==0:
+                agent.replay()
+
 
         state=next_state
         rewards+=reward
@@ -38,6 +43,9 @@ for episode in range(1000):
         if done:
             break
     episode_rewards.append(rewards)
+
+    agent.update_memory_needed(episode,rewards)
+    environ.update_penalty_needed(episode,rewards)
 
     if agent.epsilon > agent.epsilon_min:
         agent.epsilon*= agent.epsilon_decay
