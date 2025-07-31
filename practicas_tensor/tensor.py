@@ -3,6 +3,9 @@ import numpy as np
 import copy
 import random
 from collections import deque
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import Rectangle
 from structure_creator import create_structure
 
 class Enviroment:
@@ -81,8 +84,37 @@ class Enviroment:
         return encoding_structure
 
     def render(self):
-        for i in self.structure:
-            print(i)
+        colors=["black","white","green","yellow"]
+        cmap=ListedColormap(colors)
+
+        patches=[
+            Rectangle(xy=(0,0),width=1,height=1,facecolor=colors[0],label="Obstaculo"),
+            Rectangle(xy=(0,0),width=1,height=1,facecolor=colors[1],label="Camino"),
+            Rectangle(xy=(0,0),width=1,height=1,facecolor=colors[2],label="Agente"),
+            Rectangle(xy=(0,0),width=1,height=1,facecolor=colors[3],label="Meta")]
+
+        render_structure=copy.deepcopy(self.structure)
+
+        for i in range(len(render_structure)):
+            for j in range(len(render_structure[i])):
+                match render_structure[i][j]:
+                    case "#":
+                        render_structure[i][j]=0
+                    case ".":
+                        render_structure[i][j]=1
+                    case "A":
+                        render_structure[i][j]=2
+                    case "G":
+                        render_structure[i][j]=3
+        
+        render_structure=np.array(render_structure,dtype=np.int32)
+        
+        plt.clf()
+        plt.imshow(render_structure,cmap=cmap)
+        plt.legend(handles=patches)
+        plt.axis("off")
+        plt.pause(0.2)
+        plt.draw()
 
 class Agent:
 
@@ -102,7 +134,7 @@ class Agent:
         self.epsilon_decay=0.99
         self.learning_rate=0.005
         self.batch_size=64
-        self.memory=deque(maxlen=4000)
+        self.memory=deque(maxlen=5000)
 
         self.model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=self.learning_rate),

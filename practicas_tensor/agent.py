@@ -1,8 +1,13 @@
 from tensor import Enviroment,Agent
 import sys,time,os
+import matplotlib.pyplot as plt
 
 environ=Enviroment(sys.argv[1])
 agent=Agent(environ.get_state().shape)
+
+episode_rewards=[]
+
+plt.ion()
 
 for episode in range(1000):
     state=environ.reset()
@@ -19,7 +24,7 @@ for episode in range(1000):
 
         if episode %50==0:
             environ.render()
-            time.sleep(0.6)
+            time.sleep(0.3)
             os.system("clear")
 
         next_state=environ.get_state()
@@ -32,8 +37,16 @@ for episode in range(1000):
 
         if done:
             break
+    episode_rewards.append(rewards)
 
     if agent.epsilon > agent.epsilon_min:
         agent.epsilon*= agent.epsilon_decay
 
     print("Episodio:", episode, "| Recompensa total:", rewards, "| Epsilon:", agent.epsilon)
+
+plt.plot(episode_rewards)
+plt.xlabel("Episodio")
+plt.ylabel("Recompensa Total")
+plt.title("Recompensas")
+plt.grid(True)
+plt.show()
