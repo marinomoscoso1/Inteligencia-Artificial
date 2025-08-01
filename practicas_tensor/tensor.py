@@ -12,7 +12,7 @@ class Enviroment:
     def __init__(self,file):
         self.file=file
 
-        self.original_structure,self.agent_position,self.goal_position=create_structure(self.file)
+        self.original_structure,self.agent_position,self.goal_position=create_structure(self.file,random_maze=True)
 
         self.structure=copy.deepcopy(self.original_structure)
 
@@ -203,7 +203,7 @@ class Agent:
     
     def get_action(self,state):
 
-        random_number=tf.random.uniform(shape=[],dtype=tf.float32)
+        random_number=tf.random.uniform(shape=[],dtype=tf.float32,minval=0.01,maxval=1.5)
         print(random_number,"random epsilon")
 
         if random_number < self.epsilon:
