@@ -15,14 +15,14 @@ for episode in range(1000):
 
     rewards=0
 
-    for step in range(80):
+    for step in range(500):
 
         action=agent.get_action(state)
 
         reward,next_state,done=environ.step(action)
 
         environ.render()
-        time.sleep(0.3)
+        time.sleep(0.6)
         os.system("clear")
 
         next_state=environ.get_state()
@@ -42,6 +42,7 @@ for episode in range(1000):
 
         if done:
             break
+        
     episode_rewards.append(rewards)
 
     agent.update_memory_needed(episode,rewards)

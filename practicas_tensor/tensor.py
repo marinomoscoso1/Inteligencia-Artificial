@@ -44,7 +44,7 @@ class Enviroment:
             if average>self.best_avg_reward:
                 self.best_avg_reward=average
             else:
-                if self.repetitive_penalty>-20:
+                if self.repetitive_penalty>-12:
                     self.repetitive_penalty-=1
                 if self.goal_reward<210:
                     self.goal_reward+=5
@@ -54,26 +54,37 @@ class Enviroment:
         reward_pass=1
         invalid_reward=-8
 
+        print(action,"accion,modelo")
+
+
         match action:
             case 0:
-                new_state=[self.actual_agent_position[0],self.actual_agent_position[1]-1]
+                new_state=[self.actual_agent_position[0],self.actual_agent_position[1]-1] #izquierda
             case 1:
-                new_state=[self.actual_agent_position[0],self.actual_agent_position[1]+1]
+                new_state=[self.actual_agent_position[0],self.actual_agent_position[1]+1] #Derecha
             case 2:
-                new_state=[self.actual_agent_position[0]+1,self.actual_agent_position[1]]
+                new_state=[self.actual_agent_position[0]+1,self.actual_agent_position[1]] #Abajo
             case 3:
-                new_state=[self.actual_agent_position[0]-1,self.actual_agent_position[1]]
+                new_state=[self.actual_agent_position[0]-1,self.actual_agent_position[1]] #Arriba
     
         if new_state[0]<0 or new_state[1]<0 or new_state[0]>=len(self.structure) or new_state[1]>=len(self.structure[0]):
+            print("camino invalido")
             return invalid_reward,new_state,False
         
         if tuple(new_state) in self.visited_positions:
+            print("ojo que ya lo visito")
+            self.structure[new_state[0]][new_state[1]]="A"
+            self.structure[self.actual_agent_position[0]][self.actual_agent_position[1]]="."
+            self.actual_agent_position=new_state
             return self.repetitive_penalty,new_state,False
     
         cell= self.structure[new_state[0]][new_state[1]]
 
+        print(new_state,"Nuevo estado",cell,"celda")
+
         if cell=="G":
             self.structure[new_state[0]][new_state[1]]="A"
+            self.structure[self.actual_agent_position[0]][self.actual_agent_position[1]]="."
             self.actual_agent_position=new_state
             return self.goal_reward,new_state,True
         elif cell=="#":
@@ -83,10 +94,7 @@ class Enviroment:
             self.visited_positions.add(tuple(new_state))
             self.structure[self.actual_agent_position[0]][self.actual_agent_position[1]]="."
             self.actual_agent_position=new_state
-            #for i in self.structure:
-            #    print(i)
-
-        return reward_pass,self.actual_agent_position,False
+            return reward_pass,new_state,False
     
     def get_state(self):
 
@@ -155,6 +163,7 @@ class Agent:
         self.model.add(tf.keras.layers.Conv2D(32,(3,3),input_shape=self.input,activation="relu"))
         self.model.add(tf.keras.layers.Flatten())
         self.model.add(tf.keras.layers.Dense(128,activation="relu"))
+        self.model.add(tf.keras.layers.Dropout(0.2))
         self.model.add(tf.keras.layers.Dense(4,activation="linear"))
 
         self.best_avg_reward=-float("inf")
@@ -195,12 +204,16 @@ class Agent:
     def get_action(self,state):
 
         random_number=tf.random.uniform(shape=[],dtype=tf.float32)
+        print(random_number,"random epsilon")
 
         if random_number < self.epsilon:
-            return tf.random.uniform(dtype=tf.int32,minval=0,maxval=4,shape=[])
+            desicion=tf.random.uniform(dtype=tf.int32,minval=0,maxval=4,shape=[])
+            print(desicion,"Decision")
+            return desicion
         else:
             state=np.expand_dims(state,axis=0)
             prediction=self.model.predict(state)
+            print(np.argmax(prediction[0]),"Prediccion Modelo")
             return np.argmax(prediction[0])
         
     def remember(self,state,action,reward,next_state,done):
